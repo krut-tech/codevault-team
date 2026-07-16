@@ -2,16 +2,30 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Mail, Lock } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase, setRememberMe } from "@/lib/supabaseClient";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The auth store's `user` is set asynchronously by onAuthStateChange (in
+  // authStore.ts) once Supabase confirms the session, which happens shortly
+  // after signInWithPassword resolves. Nothing was previously watching that
+  // state here, so a fully successful login (network requests 200 OK) left
+  // the user stuck on the login screen forever — this effect is what
+  // actually completes the sign-in flow. It also covers the case where
+  // someone who's already logged in lands on /login directly.
+  useEffect(() => {
+    if (user) navigate("/dashboard", { replace: true });
+  }, [user, navigate]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -24,6 +38,8 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) setError(error.message);
+    // No navigate() call needed here on success — the useEffect above
+    // handles it once the auth store's user state updates.
   }
 
   return (
