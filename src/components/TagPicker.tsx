@@ -30,9 +30,17 @@ export function TagPicker({
 
 function toggle(tagId: string, active: boolean) {
   if (folderId) {
-    active ? removeFromFolder.mutate({ folderId, tagId }) : assignToFolder.mutate({ folderId, tagId });
+    if (active) {
+      removeFromFolder.mutate({ folderId, tagId });
+    } else {
+      assignToFolder.mutate({ folderId, tagId });
+    }
   } else if (fileId) {
-    active ? removeFromFile.mutate({ fileId, tagId }) : assignToFile.mutate({ fileId, tagId });
+    if (active) {
+      removeFromFile.mutate({ fileId, tagId });
+    } else {
+      assignToFile.mutate({ fileId, tagId });
+    }
   }
 }
 
