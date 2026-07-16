@@ -28,13 +28,13 @@ export function TagPicker({
   const activeTags = folderId ? folderTags : fileTags;
   const activeIds = new Set(activeTags?.map((t) => t.id));
 
-  function toggle(tagId: string, active: boolean) {
-    if (folderId) {
-      active ? removeFromFolder.mutate({ folderId, tagId }) : assignToFolder.mutate({ folderId, tagId });
-    } else if (fileId) {
-      active ? removeFromFile.mutate({ fileId, tagId }) : assignToFile.mutate({ fileId, tagId });
-    }
+function toggle(tagId: string, active: boolean) {
+  if (folderId) {
+    active ? removeFromFolder.mutate({ folderId, tagId }) : assignToFolder.mutate({ folderId, tagId });
+  } else if (fileId) {
+    active ? removeFromFile.mutate({ fileId, tagId }) : assignToFile.mutate({ fileId, tagId });
   }
+}
 
   return (
     <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-6 z-40 w-56 rounded-lg border border-border-subtle bg-bg-surface p-3 shadow-lg">
