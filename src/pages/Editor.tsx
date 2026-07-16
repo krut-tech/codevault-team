@@ -23,9 +23,14 @@ export default function Editor() {
   const dirtyRef = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (file?.content !== undefined && file?.content !== null) setContent(file.content);
-  }, [file?.id]);
+// Intentionally keyed only on file.id: we want to load content when the
+// user switches files, but NOT on every background refetch of `file`
+// (react-query), which would clobber in-progress unsaved edits.
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
+  if (file?.content !== undefined && file?.content !== null) setContent(file.content);
+  // oxlint-disable-next-line
+}, [file?.id]);
 
   function handleChange(value: string | undefined) {
     setContent(value ?? "");
