@@ -16,6 +16,7 @@ import Favorites from "@/pages/Favorites";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminActivityLogs from "@/pages/AdminActivityLogs";
 import AdminSettings from "@/pages/AdminSettings";
+import NotFound from "@/pages/NotFound";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 
 // Heavier pages (Monaco, dropzone+jszip, collections) are code-split
@@ -78,6 +79,9 @@ export default function App() {
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
           </Route>
+
+          {/* Catch-all: unmatched routes get a real 404 instead of a blank screen */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

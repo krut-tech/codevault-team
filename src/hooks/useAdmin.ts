@@ -30,9 +30,16 @@ export function useRemoveUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("users").delete().eq("id", id);
+      // Deleting a team member must go through a service-role edge function:
+      // it needs to (a) deprovision the actual Supabase Auth account so
+      // access is really revoked, not just hidden in the UI, and (b) clear
+      // FK references on their content first so the delete doesn't get
+      // rejected outright. See supabase/functions/remove-team-member.
+      const { data, error } = await supabase.functions.invoke("remove-team-member", {
+        body: { userId: id },
+      });
       if (error) throw error;
-      await logActivity("user.removed", "user", id, {});
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team-users"] }),
   });

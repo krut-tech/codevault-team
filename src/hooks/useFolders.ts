@@ -89,18 +89,78 @@ export function useRenameFolder() {
   });
 }
 
+/**
+ * Soft-deletes a folder AND everything nested inside it (subfolders and
+ * files, at any depth). Without this, only the folder row itself was
+ * marked is_deleted, leaving descendants invisible in the Folder Browser
+ * (their parent is hidden) but NOT marked deleted — so they never showed
+ * up in the Recycle Bin either, yet still consumed storage and could
+ * still surface in Search. Worse, when the parent later crossed the
+ * retention window, purge-recycle-bin hard-deletes it, and Postgres'
+ * ON DELETE CASCADE silently removes those never-flagged descendant rows
+ * too — without ever removing their Storage objects, leaking storage
+ * forever.
+ */
+async function collectDescendantIds(rootFolderId: string): Promise<{ folderIds: string[]; fileIds: string[] }> {
+  const folderIds: string[] = [];
+  const fileIds: string[] = [];
+  let frontier = [rootFolderId];
+
+  while (frontier.length > 0) {
+    const { data: childFolders } = await supabase
+      .from("folders")
+      .select("id")
+      .in("parent_folder_id", frontier);
+    const { data: childFiles } = await supabase.from("files").select("id").in("folder_id", frontier);
+
+    fileIds.push(...(childFiles ?? []).map((f) => f.id));
+    const nextFolderIds = (childFolders ?? []).map((f) => f.id);
+    folderIds.push(...nextFolderIds);
+    frontier = nextFolderIds;
+  }
+
+  return { folderIds, fileIds };
+}
+
 export function useSoftDeleteFolder() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async (id: string) => {
       const { data: folder } = await supabase.from("folders").select("name").eq("id", id).single();
+
+      // Also soft-delete every file directly in this folder, plus every
+      // nested subfolder and its files, at any depth.
+      const { folderIds: descendantFolderIds, fileIds: descendantFileIds } = await collectDescendantIds(id);
+      const { data: directFiles } = await supabase.from("files").select("id").eq("folder_id", id);
+      const allFileIds = [...(directFiles ?? []).map((f) => f.id), ...descendantFileIds];
+      const now = new Date().toISOString();
+
       const { error } = await supabase
         .from("folders")
-        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+        .update({ is_deleted: true, deleted_at: now })
         .eq("id", id);
       if (error) throw error;
-      await logActivity("folder.deleted", "folder", id, {});
+
+      if (descendantFolderIds.length > 0) {
+        const { error: subErr } = await supabase
+          .from("folders")
+          .update({ is_deleted: true, deleted_at: now })
+          .in("id", descendantFolderIds);
+        if (subErr) throw subErr;
+      }
+      if (allFileIds.length > 0) {
+        const { error: fileErr } = await supabase
+          .from("files")
+          .update({ is_deleted: true, deleted_at: now })
+          .in("id", allFileIds);
+        if (fileErr) throw fileErr;
+      }
+
+      await logActivity("folder.deleted", "folder", id, {
+        cascaded_folders: descendantFolderIds.length,
+        cascaded_files: allFileIds.length,
+      });
       await notifyTeam(`${user?.full_name ?? "Someone"} deleted folder "${folder?.name ?? ""}"`, "folder.deleted", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
@@ -111,11 +171,23 @@ export function useRestoreFolder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { folderIds: descendantFolderIds, fileIds: descendantFileIds } = await collectDescendantIds(id);
+      const { data: directFiles } = await supabase.from("files").select("id").eq("folder_id", id);
+      const allFileIds = [...(directFiles ?? []).map((f) => f.id), ...descendantFileIds];
+
       const { error } = await supabase
         .from("folders")
         .update({ is_deleted: false, deleted_at: null })
         .eq("id", id);
       if (error) throw error;
+
+      if (descendantFolderIds.length > 0) {
+        await supabase.from("folders").update({ is_deleted: false, deleted_at: null }).in("id", descendantFolderIds);
+      }
+      if (allFileIds.length > 0) {
+        await supabase.from("files").update({ is_deleted: false, deleted_at: null }).in("id", allFileIds);
+      }
+
       await logActivity("folder.restored", "folder", id, {});
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),

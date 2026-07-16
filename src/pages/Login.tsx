@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Mail, Lock } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { Link } from "react-router-dom";
+import { supabase, setRememberMe } from "@/lib/supabaseClient";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,10 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // Must be set before signInWithPassword — the auth client reads this
+    // preference to decide whether to persist the session in localStorage
+    // (survives browser restart) or sessionStorage (cleared on tab close).
+    setRememberMe(remember);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) setError(error.message);
@@ -63,9 +68,9 @@ export default function Login() {
               />
               Remember me
             </label>
-            <a href="/forgot-password" className="font-medium text-brand hover:underline">
+            <Link to="/forgot-password" className="font-medium text-brand hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           {error && <p className="text-sm text-danger">{error}</p>}

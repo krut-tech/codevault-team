@@ -7,10 +7,16 @@ import JSZip from "jszip";
 import { toast } from "sonner";
 
 const BUCKET = "codevault-files";
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB per file
+const MAX_ZIP_ENTRIES = 2000; // guard against zip bombs / pathological archives
 
-function extOf(name: string) {
+export function extOf(name: string) {
   const parts = name.split(".");
   return parts.length > 1 ? parts.pop()!.toLowerCase() : "";
+}
+
+export function sanitizeFileName(name: string) {
+  return name.replace(/[/\\]/g, "_");
 }
 
 async function ensureFolderPath(
@@ -76,6 +82,11 @@ export function useFileUpload(targetFolderId: string | null) {
           if (rootErr) throw rootErr;
 
           const entries = Object.values(zip.files);
+          if (entries.length > MAX_ZIP_ENTRIES) {
+            throw new Error(
+              `"${file.name}" contains ${entries.length} entries, which exceeds the ${MAX_ZIP_ENTRIES}-entry limit per upload.`
+            );
+          }
           for (const entry of entries) {
             if (entry.dir) continue;
             const pathParts = entry.name.split("/").filter(Boolean);
@@ -109,7 +120,14 @@ export function useFileUpload(targetFolderId: string | null) {
 }
 
 async function uploadSingleFile(file: File, folderId: string | null, userId: string | undefined) {
-  const storagePath = `${folderId ?? "root"}/${Date.now()}-${file.name}`;
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(`"${file.name}" is ${(file.size / 1024 / 1024).toFixed(1)}MB, which exceeds the 50MB per-file limit.`);
+  }
+  // Strip path separators from the filename before it's interpolated into
+  // the storage path, so a crafted name (e.g. containing "/" or "..")
+  // can't land the object outside the intended folder prefix.
+  const safeName = sanitizeFileName(file.name);
+  const storagePath = `${folderId ?? "root"}/${Date.now()}-${safeName}`;
   const { error: storageErr } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
     cacheControl: "3600",
     upsert: false,
@@ -179,8 +197,13 @@ export function useDownloadFile() {
       const a = document.createElement("a");
       a.href = url;
       a.download = name;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      a.remove();
+      // Revoking immediately after click() can cancel the download in
+      // Safari/WebKit before the browser has actually started reading the
+      // blob. Defer it to the next tick instead.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     },
   });
 }

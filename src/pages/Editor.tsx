@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import MonacoEditor from "@monaco-editor/react";
 import { useParams } from "react-router-dom";
 import { useFile, useSaveFile, useFileVersions } from "@/hooks/useFile";
+import { useDownloadFile } from "@/hooks/useFileUpload";
 import { languageForExtension } from "@/lib/monacoLang";
 import { useEffect, useRef, useState } from "react";
 import { Save, Maximize2, Minimize2, History, Copy, Download } from "lucide-react";
@@ -15,6 +16,7 @@ export default function Editor() {
   const { data: file, isLoading } = useFile(fileId);
   const { data: versions } = useFileVersions(fileId);
   const saveFile = useSaveFile();
+  const downloadFile = useDownloadFile();
 
   const [content, setContent] = useState("");
   const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
@@ -22,6 +24,19 @@ export default function Editor() {
   const [showHistory, setShowHistory] = useState(false);
   const dirtyRef = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Warn before leaving the tab/window if there are unsaved edits still
+  // sitting inside the 2s autosave debounce window.
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (dirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
 // Intentionally keyed only on file.id: we want to load content when the
 // user switches files, but NOT on every background refetch of `file`
@@ -46,11 +61,41 @@ useEffect(() => {
 
   function handleManualSave() {
     if (!fileId) return;
+    // Cancel any pending autosave so we don't fire a redundant duplicate
+    // save request right after this manual one.
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
     saveFile.mutate(
       { id: fileId, content },
       { onSuccess: () => toast.success("Saved"), onError: () => toast.error("Save failed") }
     );
     dirtyRef.current = false;
+  }
+
+  function handleRestoreVersion(versionContent: string) {
+    setContent(versionContent);
+    // A restored version is an unsaved edit like any other — mark it dirty
+    // and schedule an autosave, otherwise navigating away silently discards
+    // the "restore" and nothing is actually persisted.
+    dirtyRef.current = true;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      if (fileId && dirtyRef.current) {
+        saveFile.mutate({ id: fileId, content: versionContent });
+        dirtyRef.current = false;
+      }
+    }, 2000);
+    toast.info("Version loaded — saving shortly (or press Save now)");
+  }
+
+  function handleDownload() {
+    if (!file) return;
+    downloadFile.mutate(
+      { storagePath: file.storage_path, name: file.name },
+      { onError: () => toast.error("Download failed") }
+    );
   }
 
   function handleCopy() {
@@ -113,7 +158,7 @@ useEffect(() => {
               {versions?.map((v: any) => (
                 <button
                   key={v.id}
-                  onClick={() => setContent(v.content ?? "")}
+                  onClick={() => handleRestoreVersion(v.content ?? "")}
                   className="block w-full rounded-md border border-border-subtle p-2 text-left text-xs hover:bg-bg-secondary"
                 >
                   <p className="font-medium">{v.users?.full_name ?? "Unknown"}</p>
@@ -130,7 +175,7 @@ useEffect(() => {
   if (fullscreen) return editorPane;
 
   return (
-    <AppLayout title="Code Editor" subtitle={file?.name} actions={<Button size="sm" variant="secondary"><Download className="h-4 w-4" /> Download</Button>}>
+    <AppLayout title="Code Editor" subtitle={file?.name} actions={<Button size="sm" variant="secondary" onClick={handleDownload} loading={downloadFile.isPending}><Download className="h-4 w-4" /> Download</Button>}>
       {editorPane}
     </AppLayout>
   );

@@ -11,13 +11,14 @@ export async function logActivity(
   metadata: Record<string, unknown> = {}
 ) {
   const user = useAuthStore.getState().user;
-  await supabase.from("activity_logs").insert({
+  const { error } = await supabase.from("activity_logs").insert({
     user_id: user?.id ?? null,
     action,
     entity_type: entityType,
     entity_id: entityId,
     metadata,
   });
+  if (error) console.error("logActivity: insert failed", error);
 }
 
 // Admin-only: live activity feed

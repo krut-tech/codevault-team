@@ -49,7 +49,15 @@ export default function AdminUsers() {
                 variant="ghost"
                 aria-label={`Remove ${u.full_name}`}
                 disabled={u.id === currentUser?.id}
-                onClick={() => removeUser.mutate(u.id)}
+                onClick={() => {
+                  if (!window.confirm(`Remove ${u.full_name} from the team? This revokes their access immediately and cannot be undone.`)) {
+                    return;
+                  }
+                  removeUser.mutate(u.id, {
+                    onSuccess: () => toast.success(`${u.full_name} removed`),
+                    onError: (err) => toast.error(`Failed to remove ${u.full_name}: ${err.message}`),
+                  });
+                }}
               >
                 <Trash2 className="h-4 w-4 text-danger" />
               </Button>
