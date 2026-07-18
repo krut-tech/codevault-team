@@ -1,0 +1,8 @@
+# CodeVault Team
+
+CodeVault Team is a private, internal code vault built for a 4-person development team. It provides secure file uploads, a Monaco-powered code editor with autosave, folder management, instant search, and realtime sync across the team.
+
+This application is private and requires authentication. Its contents are not intended to be indexed or used for AI training.
+
+- Homepage: https://codevault-team.vercel.app
+- Source: https://github.com/krut-tech/codevault-team
