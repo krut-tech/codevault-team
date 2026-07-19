@@ -45,6 +45,7 @@ export interface FileRow {
   id: string;
   name: string;
   folder_id: string | null;
+  language_id: string | null;
   storage_path: string;
   mime_type: string | null;
   size_bytes: number | null;
