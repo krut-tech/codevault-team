@@ -22,6 +22,7 @@ import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 // Heavier pages (Monaco, dropzone+jszip, collections) are code-split
 const Editor = lazy(() => import("@/pages/Editor"));
 const FolderBrowser = lazy(() => import("@/pages/FolderBrowser"));
+const LanguageDetail = lazy(() => import("@/pages/LanguageDetail"));
 const Collections = lazy(() => import("@/pages/Collections"));
 const CollectionDetail = lazy(() => import("@/pages/CollectionDetail"));
 const Snippets = lazy(() => import("@/pages/Snippets"));
@@ -57,6 +58,8 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/languages" element={<Languages />} />
+            <Route path="/languages/:languageId" element={<Lazy><LanguageDetail /></Lazy>} />
+            <Route path="/languages/:languageId/folders/:folderId" element={<Lazy><LanguageDetail /></Lazy>} />
             <Route path="/projects" element={<Lazy><Projects /></Lazy>} />
             <Route path="/folders/:folderId" element={<Lazy><FolderBrowser /></Lazy>} />
             <Route path="/files" element={<Lazy><FolderBrowser /></Lazy>} />
