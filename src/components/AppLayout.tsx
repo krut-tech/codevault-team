@@ -76,10 +76,14 @@ export function AppLayout({
             {actions}
             <button
               onClick={() => navigate("/profile")}
-              className="h-9 w-9 flex-shrink-0 rounded-full bg-brand-gradient"
+              className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full bg-brand-gradient"
               title={user?.full_name}
               aria-label="Open profile"
-            />
+            >
+              {user?.avatar_url && (
+                <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+              )}
+            </button>
           </div>
         </header>
         <div className="p-4 sm:p-8">{children}</div>
