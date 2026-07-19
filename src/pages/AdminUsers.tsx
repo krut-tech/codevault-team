@@ -20,7 +20,11 @@ export default function AdminUsers() {
         {users?.map((u) => (
           <Card key={u.id} className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-brand-gradient" />
+              {u.avatar_url ? (
+                <img src={u.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-brand-gradient" />
+              )}
               <div>
                 <p className="text-sm font-medium">{u.full_name}</p>
                 <p className="text-xs text-text-secondary">{u.email}</p>
