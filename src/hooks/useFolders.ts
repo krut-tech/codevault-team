@@ -53,6 +53,59 @@ export function useFolderContents(parentFolderId: string | null) {
   return query;
 }
 
+// Fetch the folders + files that sit at the root of a language (i.e. not
+// nested inside any folder). Once you navigate into a subfolder, regular
+// useFolderContents(folderId) takes over — subfolders/files stay scoped
+// automatically because they're only reachable via that folder's id.
+export function useLanguageRootContents(languageId: string | null) {
+  const qc = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["language-root-contents", languageId],
+    queryFn: async () => {
+      const [{ data: folders, error: fErr }, { data: files, error: fiErr }] = await Promise.all([
+        supabase
+          .from("folders")
+          .select("*")
+          .eq("language_id", languageId)
+          .is("parent_folder_id", null)
+          .eq("is_deleted", false)
+          .order("name"),
+        supabase
+          .from("files")
+          .select("*")
+          .eq("language_id", languageId)
+          .is("folder_id", null)
+          .eq("is_deleted", false)
+          .order("name"),
+      ]);
+      if (fErr) throw fErr;
+      if (fiErr) throw fiErr;
+      return { folders: (folders ?? []) as FolderRow[], files: (files ?? []) as FileRow[] };
+    },
+    enabled: !!languageId,
+  });
+
+  useEffect(() => {
+    if (!languageId) return;
+    const channel = supabase
+      .channel(`language-root-contents-${languageId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "folders" }, () => {
+        qc.invalidateQueries({ queryKey: ["language-root-contents", languageId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "files" }, () => {
+        qc.invalidateQueries({ queryKey: ["language-root-contents", languageId] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [languageId, qc]);
+
+  return query;
+}
+
 export function useCreateFolder() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
@@ -73,7 +126,10 @@ export function useCreateFolder() {
       await notifyTeam(`${user?.full_name ?? "Someone"} created folder "${params.name}"`, "folder.created", data.id);
       return data as FolderRow;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["folder-contents"] });
+      qc.invalidateQueries({ queryKey: ["language-root-contents"] });
+    },
   });
 }
 
@@ -85,7 +141,10 @@ export function useRenameFolder() {
       if (error) throw error;
       await logActivity("folder.renamed", "folder", id, { name });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["folder-contents"] });
+      qc.invalidateQueries({ queryKey: ["language-root-contents"] });
+    },
   });
 }
 
@@ -163,7 +222,10 @@ export function useSoftDeleteFolder() {
       });
       await notifyTeam(`${user?.full_name ?? "Someone"} deleted folder "${folder?.name ?? ""}"`, "folder.deleted", id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["folder-contents"] });
+      qc.invalidateQueries({ queryKey: ["language-root-contents"] });
+    },
   });
 }
 
@@ -190,7 +252,10 @@ export function useRestoreFolder() {
 
       await logActivity("folder.restored", "folder", id, {});
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["folder-contents"] });
+      qc.invalidateQueries({ queryKey: ["language-root-contents"] });
+    },
   });
 }
 
@@ -205,7 +270,10 @@ export function useMoveFolder() {
       if (error) throw error;
       await logActivity("folder.moved", "folder", id, { newParentId });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["folder-contents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["folder-contents"] });
+      qc.invalidateQueries({ queryKey: ["language-root-contents"] });
+    },
   });
 }
 

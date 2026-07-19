@@ -31,6 +31,18 @@ export function useLanguages() {
   return query;
 }
 
+export function useLanguage(id: string | null) {
+  return useQuery({
+    queryKey: ["language", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("languages").select("*").eq("id", id).single();
+      if (error) throw error;
+      return data as Language;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateLanguage() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
