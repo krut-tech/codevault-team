@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuthStore } from "@/store/authStore";
 import {
   Code2, Lock, Zap, Users, GitBranch, Search,
   ArrowRight, Github
@@ -28,6 +30,24 @@ const stats = [
 
 export default function Landing() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+
+  // If a session already exists, don't show the marketing page (with its
+  // "Sign In" button) at all — go straight to the dashboard. Without this,
+  // an already-logged-in person landing on "/" always saw Sign In, even
+  // though they had nothing left to sign in for.
+  useEffect(() => {
+    if (user) navigate("/dashboard", { replace: true });
+  }, [user, navigate]);
+
+  if (loading || user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-bg-secondary">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen overflow-hidden bg-bg-secondary">
