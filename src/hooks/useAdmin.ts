@@ -26,6 +26,28 @@ export function useUpdateUserRole() {
   });
 }
 
+export function useAddTeamMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { email: string; fullName: string; password?: string; role: Role }) => {
+      // Creating a team member must go through a service-role edge function:
+      // it needs to (a) actually create the Supabase Auth account (auth.users
+      // isn't writable by a normal client session), and (b) insert the
+      // matching public.users profile row, since there's no auth trigger or
+      // self-signup flow doing that automatically. See
+      // supabase/functions/add-team-member.
+      const { data, error } = await supabase.functions.invoke("add-team-member", {
+        body: input,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await logActivity("user.added", "user", data.id, { email: input.email, role: input.role });
+      return data as { id: string; email: string; password: string };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["team-users"] }),
+  });
+}
+
 export function useRemoveUser() {
   const qc = useQueryClient();
   return useMutation({
