@@ -7,6 +7,7 @@ import { Plus, Code2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const PRESET_COLORS = ["#6366F1", "#A855F7", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899", "#14B8A6"];
 
@@ -84,7 +85,20 @@ export default function Languages() {
         {languages?.map((lang) => (
           <Card key={lang.id} className="group relative cursor-pointer p-5" onClick={() => navigate(`/languages/${lang.id}`)}>
             <button
-              onClick={(e) => { e.stopPropagation(); deleteLanguage.mutate(lang.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!window.confirm(`Delete "${lang.name}"? This can't be undone.`)) return;
+                deleteLanguage.mutate(lang.id, {
+                  onError: (err: any) => {
+                    const isFkViolation = err?.code === "23503" || String(err?.message).includes("foreign key");
+                    toast.error(
+                      isFkViolation
+                        ? `Can't delete "${lang.name}" — files or folders are still tagged with it. Move or delete those first.`
+                        : `Failed to delete "${lang.name}": ${err?.message ?? "Unknown error"}`
+                    );
+                  },
+                });
+              }}
               className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <Trash2 className="h-3.5 w-3.5 text-text-muted hover:text-danger" />
