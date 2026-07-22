@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import type { AppUser, Role } from "@/types";
 import { logActivity } from "@/hooks/useActivityLog";
+import { notifyTeam } from "@/hooks/useTeamNotify";
+import { useAuthStore } from "@/store/authStore";
 
 export function useTeamUsers() {
   return useQuery({
@@ -28,6 +30,7 @@ export function useUpdateUserRole() {
 
 export function useAddTeamMember() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async (input: { email: string; fullName: string; password?: string; role: Role }) => {
       // Creating a team member must go through a service-role edge function:
@@ -42,6 +45,7 @@ export function useAddTeamMember() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       await logActivity("user.added", "user", data.id, { email: input.email, role: input.role });
+      await notifyTeam(`${user?.full_name ?? "Someone"} added ${input.fullName} to the team`, "user.added", data.id);
       return data as { id: string; email: string; password: string };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team-users"] }),
@@ -50,6 +54,7 @@ export function useAddTeamMember() {
 
 export function useRemoveUser() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async (id: string) => {
       // Deleting a team member must go through a service-role edge function:
@@ -57,11 +62,14 @@ export function useRemoveUser() {
       // access is really revoked, not just hidden in the UI, and (b) clear
       // FK references on their content first so the delete doesn't get
       // rejected outright. See supabase/functions/remove-team-member.
+      const { data: removedUser } = await supabase.from("users").select("full_name").eq("id", id).single();
       const { data, error } = await supabase.functions.invoke("remove-team-member", {
         body: { userId: id },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      await logActivity("user.removed", "user", id, {});
+      await notifyTeam(`${user?.full_name ?? "Someone"} removed ${removedUser?.full_name ?? "a team member"} from the team`, "user.removed", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team-users"] }),
   });
