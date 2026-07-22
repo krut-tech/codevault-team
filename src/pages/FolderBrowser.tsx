@@ -277,7 +277,7 @@ export default function FolderBrowser() {
           ))}
 
           {data?.files.map((file) => (
-            <Card key={file.id} className="group relative cursor-pointer p-5" onClick={() => renamingId !== file.id && setPreviewFile(file)}>
+            <Card key={file.id} className={cn("group relative cursor-pointer p-5", openMenuId === file.id && "z-20")} onClick={() => renamingId !== file.id && setPreviewFile(file)}>
               {renamingId === file.id ? (
                 <Input
                   autoFocus
