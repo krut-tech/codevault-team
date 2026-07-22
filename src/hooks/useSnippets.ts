@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/store/authStore";
 import { logActivity } from "@/hooks/useActivityLog";
+import { notifyTeam } from "@/hooks/useTeamNotify";
 
 export interface SnippetRow {
   id: string;
@@ -50,6 +51,7 @@ export function useCreateSnippet() {
         .single();
       if (error) throw error;
       await logActivity("snippet.created", "snippet", data.id, { title: params.title });
+      await notifyTeam(`${user?.full_name ?? "Someone"} created snippet "${params.title}"`, "snippet.created", data.id);
       return data as SnippetRow;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["snippets"] }),
@@ -58,10 +60,14 @@ export function useCreateSnippet() {
 
 export function useDeleteSnippet() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: snippet } = await supabase.from("snippets").select("title").eq("id", id).single();
       const { error } = await supabase.from("snippets").delete().eq("id", id);
       if (error) throw error;
+      await logActivity("snippet.deleted", "snippet", id, {});
+      await notifyTeam(`${user?.full_name ?? "Someone"} deleted snippet "${snippet?.title ?? ""}"`, "snippet.deleted", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["snippets"] }),
   });
