@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useSetting } from "@/hooks/useSettings";
 
 const mainNav = [
@@ -63,9 +64,13 @@ export function Sidebar({
         )}
       >
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-brand-gradient shadow-glow">
+          <motion.div
+            whileHover={{ scale: 1.06, rotate: -3 }}
+            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-brand-gradient shadow-glow"
+          >
             {logoUrl && <img src={logoUrl} alt="" className="h-full w-full object-cover" />}
-          </div>
+          </motion.div>
           {(!collapsed || mobileOpen) && (
             <span className="text-base font-bold tracking-tight">CodeVault</span>
           )}
@@ -116,15 +121,31 @@ function NavSection({
           key={to}
           to={to}
           onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary",
-              isActive && "bg-brand/10 text-brand"
-            )
-          }
+          className="group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
         >
-          <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-          {!collapsed && <span>{label}</span>}
+          {({ isActive }) => (
+            <>
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active-pill"
+                  className="absolute inset-0 rounded-md bg-brand/10"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
+              )}
+              {!isActive && (
+                <span className="absolute inset-0 rounded-md bg-bg-secondary opacity-0 transition-opacity group-hover:opacity-100" />
+              )}
+              <Icon
+                className={cn(
+                  "relative z-10 h-[18px] w-[18px] flex-shrink-0 transition-colors",
+                  isActive && "text-brand"
+                )}
+              />
+              {!collapsed && (
+                <span className={cn("relative z-10", isActive && "text-brand")}>{label}</span>
+              )}
+            </>
+          )}
         </NavLink>
       ))}
     </>
