@@ -231,8 +231,7 @@ export default function LanguageDetail() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data?.folders.map((f) => (
-            <Card key={f.id} className="group relative p-5">
-              {renamingId === f.id ? (
+<Card key={f.id} className={cn("group relative p-5", openMenuId === f.id && "z-20")}>              {renamingId === f.id ? (
                 <Input
                   autoFocus
                   value={renameValue}
@@ -305,8 +304,7 @@ export default function LanguageDetail() {
           ))}
 
           {data?.files.map((file) => (
-            <Card key={file.id} className="group relative cursor-pointer p-5" onClick={() => renamingId !== file.id && setPreviewFile(file)}>
-              {renamingId === file.id ? (
+<Card key={file.id} className={cn("group relative cursor-pointer p-5", openMenuId === file.id && "z-20")} onClick={() => renamingId !== file.id && setPreviewFile(file)}>              {renamingId === file.id ? (
                 <Input
                   autoFocus
                   value={renameValue}
