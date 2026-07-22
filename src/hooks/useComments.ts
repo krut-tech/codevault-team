@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/store/authStore";
 import { logActivity } from "@/hooks/useActivityLog";
+import { notifyTeam } from "@/hooks/useTeamNotify";
 
 export function useComments(fileId?: string, folderId?: string) {
   const qc = useQueryClient();
@@ -45,6 +46,12 @@ export function useAddComment() {
         .single();
       if (error) throw error;
       await logActivity("comment.added", fileId ? "file" : "folder", fileId ?? folderId ?? null, {});
+      const preview = content.length > 60 ? `${content.slice(0, 60)}…` : content;
+      await notifyTeam(
+        `${user?.full_name ?? "Someone"} commented: "${preview}"`,
+        "comment.added",
+        fileId ?? folderId ?? null
+      );
       return data;
     },
     onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ["comments", vars.fileId ?? vars.folderId] }),
