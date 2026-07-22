@@ -4,29 +4,36 @@
 
 /* =========================================
    CodeVault Team — Design Tokens
+   "Ledger" theme: warm charcoal surfaces, a
+   single diff-green accent (this is a shared
+   code vault — green/coral already carry
+   meaning here as added/removed lines, so we
+   lean into that instead of an arbitrary
+   brand gradient), Space Grotesk for display,
+   Manrope for body, JetBrains Mono for code.
    ========================================= */
 :root {
-  --bg-primary: 240 25% 4%;
-  --bg-secondary: 220 20% 97%;
-  --bg-surface: 0 0% 100%;
+  --bg-primary: 30 10% 6%;
+  --bg-secondary: 30 20% 97%;
+  --bg-surface: 36 30% 99%;
   --bg-elevated: 0 0% 100%;
 
-  --border-subtle: 220 13% 91%;
-  --border-strong: 220 13% 83%;
+  --border-subtle: 30 12% 88%;
+  --border-strong: 30 10% 78%;
 
-  --text-primary: 222 25% 8%;
-  --text-secondary: 220 9% 46%;
-  --text-muted: 220 9% 46%;
+  --text-primary: 30 15% 10%;
+  --text-secondary: 30 8% 40%;
+  --text-muted: 30 8% 60%;
 
-  --brand-primary: 239 84% 67%;
-  --brand-primary-hover: 243 75% 59%;
-  --brand-gradient-start: 239 84% 60%;
-  --brand-gradient-end: 271 81% 58%;
+  --brand-primary: 152 45% 38%;
+  --brand-primary-hover: 152 50% 32%;
+  --brand-gradient-start: 152 45% 42%;
+  --brand-gradient-end: 174 40% 42%;
 
-  --accent-success: 158 64% 42%;
-  --accent-warning: 38 92% 50%;
-  --accent-danger: 0 84% 60%;
-  --accent-info: 217 91% 60%;
+  --accent-success: 152 45% 38%;
+  --accent-warning: 38 88% 48%;
+  --accent-danger: 8 68% 55%;
+  --accent-info: 205 65% 50%;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -35,32 +42,56 @@
 }
 
 .dark {
-  --bg-primary: 240 25% 4%;
-  --bg-secondary: 240 15% 7%;
-  --bg-surface: 240 12% 10%;
-  --bg-elevated: 240 12% 13%;
+  --bg-primary: 30 9% 6%;
+  --bg-secondary: 28 8% 8%;
+  --bg-surface: 27 8% 10%;
+  --bg-elevated: 26 8% 13%;
 
-  --border-subtle: 240 10% 18%;
-  --border-strong: 240 10% 24%;
+  --border-subtle: 30 8% 18%;
+  --border-strong: 30 8% 26%;
 
-  --text-primary: 220 25% 96%;
-  --text-secondary: 220 9% 63%;
-  --text-muted: 220 9% 50%;
+  --text-primary: 40 22% 95%;
+  --text-secondary: 36 8% 66%;
+  --text-muted: 34 6% 44%;
 
-  --brand-primary: 239 91% 75%;
-  --brand-primary-hover: 239 84% 67%;
-  --brand-gradient-start: 239 91% 58%;
-  --brand-gradient-end: 271 87% 56%;
+  --brand-primary: 152 48% 55%;
+  --brand-primary-hover: 152 52% 48%;
+  --brand-gradient-start: 152 48% 55%;
+  --brand-gradient-end: 174 42% 52%;
 
-  --accent-success: 158 64% 52%;
-  --accent-warning: 43 96% 56%;
-  --accent-danger: 0 91% 71%;
-  --accent-info: 213 94% 68%;
+  --accent-success: 152 48% 55%;
+  --accent-warning: 40 92% 58%;
+  --accent-danger: 8 75% 64%;
+  --accent-info: 205 80% 65%;
 }
 
 body {
   @apply bg-bg-secondary text-text-primary antialiased;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Manrope", system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Subtle grain over the base background — quiets the flatness of a solid
+   dark surface without resorting to another gradient mesh. Purely
+   decorative, so it's excluded from screen readers and never intercepts
+   clicks. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 .glass {
