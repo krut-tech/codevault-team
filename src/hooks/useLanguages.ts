@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import type { Language } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import { logActivity } from "@/hooks/useActivityLog";
+import { notifyTeam } from "@/hooks/useTeamNotify";
 
 export function useLanguages() {
   const qc = useQueryClient();
@@ -55,6 +56,7 @@ export function useCreateLanguage() {
         .single();
       if (error) throw error;
       await logActivity("language.created", "language", data.id, { name: params.name });
+      await notifyTeam(`${user?.full_name ?? "Someone"} added language "${params.name}"`, "language.created", data.id);
       return data as Language;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["languages"] }),
@@ -63,11 +65,14 @@ export function useCreateLanguage() {
 
 export function useDeleteLanguage() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: language } = await supabase.from("languages").select("name").eq("id", id).single();
       const { error } = await supabase.from("languages").delete().eq("id", id);
       if (error) throw error;
       await logActivity("language.deleted", "language", id, {});
+      await notifyTeam(`${user?.full_name ?? "Someone"} deleted language "${language?.name ?? ""}"`, "language.deleted", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["languages"] }),
   });
