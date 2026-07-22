@@ -50,7 +50,8 @@ export default {
           "radial-gradient(circle at 20% 20%, hsl(var(--brand-gradient-start) / 0.25), transparent 40%), radial-gradient(circle at 80% 0%, hsl(var(--brand-gradient-end) / 0.2), transparent 40%)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Manrope", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       keyframes: {
