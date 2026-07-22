@@ -203,7 +203,7 @@ export default function FolderBrowser() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data?.folders.map((f) => (
-            <Card key={f.id} className="group relative p-5">
+            <Card key={f.id} className={cn("group relative p-5", openMenuId === f.id && "z-20")}>
               {renamingId === f.id ? (
                 <Input
                   autoFocus
