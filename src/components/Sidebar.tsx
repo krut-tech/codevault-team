@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
+import { useSetting } from "@/hooks/useSettings";
 
 const mainNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -41,10 +42,10 @@ export function Sidebar({
   onMobileClose?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { data: logoUrl } = useSetting<string>("logo_url");
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -62,7 +63,9 @@ export function Sidebar({
         )}
       >
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="h-8 w-8 flex-shrink-0 rounded-lg bg-brand-gradient shadow-glow" />
+          <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-brand-gradient shadow-glow">
+            {logoUrl && <img src={logoUrl} alt="" className="h-full w-full object-cover" />}
+          </div>
           {(!collapsed || mobileOpen) && (
             <span className="text-base font-bold tracking-tight">CodeVault</span>
           )}
