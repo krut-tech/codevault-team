@@ -7,9 +7,9 @@
    ========================================= */
 :root {
   --bg-primary: 240 25% 4%;
-  --bg-secondary: 220 20% 97%;
-  --bg-surface: 0 0% 100%;
-  --bg-elevated: 0 0% 100%;
+  --bg-secondary: 235 45% 96%;
+  --bg-surface: 240 40% 99%;
+  --bg-elevated: 240 35% 98%;
 
   --border-subtle: 220 13% 91%;
   --border-strong: 220 13% 83%;
