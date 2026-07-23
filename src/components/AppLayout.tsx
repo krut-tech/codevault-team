@@ -1,10 +1,9 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
-import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate, useLocation } from "react-router-dom";
 import { type ReactNode, useState } from "react";
 
@@ -21,8 +20,6 @@ export function AppLayout({
 }) {
   const user = useAuthStore((s) => s.user);
   const isAdmin = useAuthStore((s) => s.isAdmin);
-  const { data: notifications } = useNotifications();
-  const unread = notifications?.filter((n) => !n.is_read).length ?? 0;
   const navigate = useNavigate();
   const location = useLocation();
   const [q, setQ] = useState("");
@@ -73,21 +70,6 @@ export function AppLayout({
             <Button variant="secondary" size="icon" className="sm:hidden" aria-label="Search" onClick={() => navigate("/search")}>
               <Search className="h-4 w-4" />
             </Button>
-            <div className="relative">
-              <Button variant="secondary" size="icon" aria-label="Notifications" onClick={() => navigate("/notifications")}>
-                <Bell className="h-4 w-4" />
-              </Button>
-              {unread > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ scale: { repeat: Infinity, duration: 2, ease: "easeInOut" } }}
-                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white"
-                >
-                  {unread > 9 ? "9+" : unread}
-                </motion.span>
-              )}
-            </div>
             {actions}
             <motion.button
               whileHover={{ scale: 1.08 }}
