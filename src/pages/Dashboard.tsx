@@ -28,6 +28,9 @@ function AnimatedNumber({ value }: { value: number }) {
   useEffect(() => {
     const controls = animate(count, value, { duration: 0.8, ease: "easeOut" });
     return () => controls.stop();
+    // count is a MotionValue from useMotionValue — it's referentially stable
+    // for the lifetime of the component, so intentionally omitted from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return <motion.span>{rounded}</motion.span>;
