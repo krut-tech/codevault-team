@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Code2, FolderKanban, Files, Bookmark,
-  Star, Clock, Download, Search, Bell, User,
+  Star, Clock, Download, Search, User,
   ShieldCheck, Users, ScrollText, ChevronLeft, FileCode2
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -23,7 +23,6 @@ const mainNav = [
 
 const utilityNav = [
   { to: "/search", label: "Search", icon: Search },
-  { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
