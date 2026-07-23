@@ -26,9 +26,9 @@ export function AppLayout({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-bg-secondary">
+    <div className="flex h-screen bg-mesh-glow bg-bg-secondary">
       <Sidebar isAdmin={isAdmin} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
-      <main className="flex-1 overflow-y-auto">
+      <main className="relative flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle bg-bg-surface/80 px-4 py-3 backdrop-blur-xl sm:px-8 sm:py-4">
           <div className="flex items-center gap-3">
             <button
