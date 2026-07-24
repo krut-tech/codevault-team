@@ -28,7 +28,21 @@ const CollectionDetail = lazy(() => import("@/pages/CollectionDetail"));
 const Snippets = lazy(() => import("@/pages/Snippets"));
 const Projects = lazy(() => import("@/pages/Projects"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Most reads here (folders, projects, languages, tags, collections,
+      // favorites, notifications) already have a Supabase realtime channel
+      // that invalidates their query on change — so refetching them again
+      // on every mount/window-focus is pure wasted work. staleTime lets
+      // cached data render instantly while realtime keeps it correct.
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function PageFallback() {
   return (
