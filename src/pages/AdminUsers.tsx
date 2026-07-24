@@ -165,7 +165,10 @@ export default function AdminUsers() {
               )}
               <div>
                 <p className="text-sm font-medium">{u.full_name}</p>
-                <p className="text-xs text-text-secondary">{u.email}</p>
+                <p className="text-xs text-text-secondary">{u.email}
+                   <p className="text-xs text-text-muted">
+                     {u.last_sign_in_at ? `Last active ${formatDistanceToNow(new Date(u.last_sign_in_at))} ago` : "Never logged in"}
+                   </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
