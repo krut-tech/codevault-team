@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { AppUser } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
+import { logActivity } from "@/hooks/useActivityLog";
 
 interface AuthState {
   user: AppUser | null;
@@ -50,5 +51,15 @@ supabase.auth.onAuthStateChange((_event, session) => {
     useAuthStore.getState().setUser(null);
   } else {
     useAuthStore.getState().hydrate();
+  }
+});
+// ...
+supabase.auth.onAuthStateChange((event, session) => {
+  if (!session?.user) { useAuthStore.getState().setUser(null); return; }
+  useAuthStore.getState().hydrate();
+  if (event === "SIGNED_IN") {
+    supabase.from("users").update({ last_sign_in_at: new Date().toISOString() }).eq("id", session.user.id)
+      .then(({ error }) => error && console.error("Failed to stamp last_sign_in_at", error));
+    logActivity("user.login", "user", session.user.id, {});
   }
 });
